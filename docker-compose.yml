@@ -78,6 +78,7 @@ services:
 # Blockscout postgres database
   db:
     image: postgres:14
+    command: -c shared_buffers=1024MB -c max_connections=200
     restart: always
     container_name: 'postgres'
     healthcheck:
