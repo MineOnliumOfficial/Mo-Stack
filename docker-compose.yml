@@ -34,7 +34,7 @@ services:
       - 8546
       - 8547
       - 60606
-      - 50001
+      - 50001:50001
     volumes:
       # -  modata:/opt/besu/database
       - ./genesis:/opt/besu/genesis
