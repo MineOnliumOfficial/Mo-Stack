@@ -33,7 +33,7 @@ services:
       - 8545
       - 8546
       - 8547
-      - 60606
+      - 60606:60606
       - 50001:50001
     volumes:
       # -  modata:/opt/besu/database
