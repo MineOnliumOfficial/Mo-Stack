@@ -15,4 +15,4 @@ Deploy the MineOnlium stack in two commands :)
 * BlockExplorer: http://localhost:4000
 * BlockExplorer API: http://localhost:8081
 * Stratum Mining Server: http://localhost:50001
-* [NGINX Proxy Manager](https://github.com/NginxProxyManager/nginx-proxy-manager):http://127.0.0.1:81
+* [NGINX Proxy Manager](https://github.com/NginxProxyManager/nginx-proxy-manager): http://localhost:81
