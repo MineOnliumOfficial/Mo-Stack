@@ -149,7 +149,20 @@ services:
     ports:
       - 8043:8043
 
+  nginx:
+    image: 'jc21/nginx-proxy-manager:latest'
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '81:81'
+      - '443:443'
+    volumes:
+      - nginx-data:/data
+      - ./letsencrypt:/etc/letsencrypt
+
+
 volumes:
    redis-data:
+   nginx-data:
   # uncomment the following line to persist the database
   #  postgres-data:
