@@ -4,7 +4,7 @@ Deploy the MineOnlium stack in two commands :)
 
 # Get started
 
-* `git clone https://github.com/MineOnliumOfficial/Mo-Stack && cd MO-Stack/`
+* `git clone https://github.com/MineOnliumOfficial/Mo-Stack && cd Mo-Stack/`
 * replace my address with yours in the `.env` file.
 * `docker compose up` 
 * ...profit?
