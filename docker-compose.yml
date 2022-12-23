@@ -2,10 +2,9 @@ version: '3.8'
 
 services:
 # mineonlium node
-   moth:
+  moth:
     image: gcr.io/mineonlium/moth
     pull_policy: always
-    container_name: geth
     restart: unless-stopped
     ports:
       - 30303:30303
@@ -41,7 +40,7 @@ services:
       - --authrpc.jwtsecret=/root/.ethereum/jwt.hex
       - --authrpc.port=8551
       - --txlookuplimit=0
-      - --bootnodes=enode://da992785d5060b9e431a13fe0d2795e508121c31e7fbcae865f6ff2901fbdedcf8cd5950ac603d3691eb29dbe77de5ea6a395631744a52d299472b8b61a1c9d6@143.198.57.118:30303,enode://da992785d5060b9e431a13fe0d2795e508121c31e7fbcae865f6ff2901fbdedcf8cd5950ac603d3691eb29dbe77de5ea6a395631744a52d299472b8b61a1c9d6@209.126.11.245:30303
+      - --bootnodes=enode://da992785d5060b9e431a13fe0d2795e508121c31e7fbcae865f6ff2901fbdedcf8cd5950ac603d3691eb29dbe77de5ea6a395631744a52d299472b8b61a1c9d6@143.198.57.118:30303,enode://5dd66881b9f0b0b8e1f1a4aad49ac422e5bc6950c7774edf1c457540d16fae02072ef6109199a0abbe24606e4ba2ceadd0f9741a680d04ecc05d4f7c01cae410@143.198.57.118:30301
       # - --mine
       # - --miner.etherbase=0xED87b75Dd703434519346f7bbb33DF70D3CFd6D6
     logging:
@@ -50,40 +49,6 @@ services:
         max-size: 2m
         max-file: 10
 
-# Grafana 
-  #TODO:: pre configure dashboards and connection(s)
-  grafana:
-    image: grafana/grafana:7.2.1
-    depends_on:
-      - prometheus
-    ports:
-      - 3001:3000
-    # volumes:
-    #   - grafana:/etc/grafana/provisioning
-    # env_file:
-    #   - .grafana/config.monitoring
-    restart: unless-stopped
-
-  push-gateway:
-    image: prom/pushgateway
-    ports:
-      - 9091:9091
-
-  # Prometheus
-  prometheus:
-    image: prom/prometheus:v2.21.0
-    depends_on:
-      - moth
-    volumes:
-    - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
-      - "--web.console.templates=/usr/share/prometheus/consoles"
-    restart: unless-stopped
-    ports:
-      - 9090:9090
 
 # Blockscout postgres database
   db:
@@ -102,10 +67,11 @@ services:
         POSTGRES_HOST_AUTH_METHOD: 'trust'
     # Uncomment the following line to persist the database 
     # Dont forget the volume in the bottom of the file as well
-    # volumes:
-    #   - postgres-data:/var/lib/postgresql/data
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
     ports:
       - 7432:5432
+    user: root
 
 # # Redis db
   redis_db:
@@ -146,6 +112,7 @@ services:
         # SECRET_KEY_BASE: '56NtB48ear7+wMSf0IQuWDAAazhpb31qyc7GiyspBP2vh7t5zlCsF5QDv76chXeN'
         CHAIN_ID: '54321'
         NETWORK: MineOnlium
+        COIN_NAME: MO
     ports:
       - 4000:4000
 
@@ -159,20 +126,18 @@ services:
     ports:
       - 8043:8043
 
-  nginx:
-    image: 'jc21/nginx-proxy-manager:latest'
-    restart: unless-stopped
-    ports:
-      - '80:80'
-      - '81:81'
-      - '443:443'
-    volumes:
-      - nginx-data:/data
-      - ./letsencrypt:/etc/letsencrypt
+  # nginx:
+  #   image: 'jc21/nginx-proxy-manager:latest'
+  #   restart: unless-stopped
+  #   ports:
+  #     - '80:80'
+  #     - '81:81'
+  #     - '443:443'
+  #   volumes:
+  #     - nginx-data:/data
+  #     - ./letsencrypt:/etc/letsencrypt
 
 
 volumes:
    redis-data:
-   nginx-data:
-  # uncomment the following line to persist the database
-  #  postgres-data:
+  #  nginx-data:
