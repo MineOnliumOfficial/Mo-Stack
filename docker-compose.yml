@@ -2,78 +2,53 @@ version: '3.8'
 
 services:
 # mineonlium node
-  mineonlium:
-    restart: always
-    command:
-      - --genesis-file=/opt/besu/genesis/genesis.json
-      - --rpc-http-enabled
-      - --rpc-http-api=ADMIN,ETH,NET,MINER,WEB3,CLIQUE,TRACE
-      - --rpc-http-host=0.0.0.0
-      - --rpc-http-cors-origins=*
-      - --rpc-ws-enabled
-      - --rpc-ws-api=ADMIN,ETH,NET,MINER,WEB3,CLIQUE,TRACE
-      - --rpc-ws-host=0.0.0.0
-      - --graphql-http-enabled
-      - --graphql-http-host=0.0.0.0
-      - --p2p-host=0.0.0.0
-      - --host-allowlist=*
-      - --p2p-port=60606
-      - --Xrpc-ipc-enabled
-      - --bootnodes=enode://186fc7e1dc26686eaef6c9a57f33cc211650bc22b5152072f32593eb39f93ee3eb2c50e5e8d99905cd3021ff595f4c5b43a9d249d596d776649ba01f6dea8584@34.170.134.108:60606
-      - --miner-stratum-enabled
-      - --miner-stratum-host=0.0.0.0
-      - --miner-stratum-port=50001
-      - --miner-enabled=true
-      - --miner-coinbase=$ADDRESS
-      - --metrics-push-enabled 
-      - --metrics-push-port=9091 
-      - --metrics-push-host=push-gateway
-    image: hyperledger/besu:latest
-    ports:
-      - 8545
-      - 8546
-      - 8547
-      - 60606:60606
-      - 50001:50001
-    volumes:
-      # -  modata:/opt/besu/database
-      - ./genesis:/opt/besu/genesis
-
-
-# Grafana 
-  #TODO:: pre configure dashboards and connection(s)
-  grafana:
-    image: grafana/grafana:7.2.1
-    depends_on:
-      - prometheus
-    ports:
-      - 3001:3000
-    # volumes:
-    #   - grafana:/etc/grafana/provisioning
-    # env_file:
-    #   - .grafana/config.monitoring
-    restart: unless-stopped
-
-  push-gateway:
-    image: prom/pushgateway
-    ports:
-      - 9091:9091
-
-  # Prometheus
-  prometheus:
-    image: prom/prometheus:v2.21.0
-    depends_on:
-      - mineonlium
-    volumes:
-    - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
-      - "--web.console.templates=/usr/share/prometheus/consoles"
+  moth:
+    image: gcr.io/mineonlium/moth
+    pull_policy: always
     restart: unless-stopped
     ports:
-      - 9090:9090
+      - 30303:30303
+      - 30303:30303/udp
+      - 8245:8545
+      - 8246:8546
+      - 8251:8551
+    volumes:
+      - ./data:/root/.ethereum
+    user: root
+    stop_signal: SIGINT
+    stop_grace_period: 2m
+    healthcheck:
+      test: [ "CMD-SHELL", "geth attach --exec eth.blockNumber" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command:
+      - --http
+      - --http.api=eth,net,web3,engine,admin
+      - --http.addr=0.0.0.0
+      - --http.vhosts=*
+      - --http.corsdomain=*
+      - --ws
+      - --ws.origins=*
+      - --ws.addr=0.0.0.0
+      - --ws.api=eth,net,web3,miner
+      - --graphql
+      - --graphql.corsdomain=*
+      - --graphql.vhosts=*
+      - --authrpc.addr=0.0.0.0
+      - --authrpc.vhosts=*
+      - --authrpc.jwtsecret=/root/.ethereum/jwt.hex
+      - --authrpc.port=8551
+      - --txlookuplimit=0
+      - --bootnodes=enode://da992785d5060b9e431a13fe0d2795e508121c31e7fbcae865f6ff2901fbdedcf8cd5950ac603d3691eb29dbe77de5ea6a395631744a52d299472b8b61a1c9d6@143.198.57.118:30303 , enode://ec3bd5272ce2abece7abe823c2a75f12568c99eaaa89cb154a6d87feed8847a52eb55c4f77e4ba7ef173fdfb8522ca712c964acc28736a9e8b51d7847d399f69@209.126.11.245:30303
+      # - --mine
+      # - --miner.etherbase=0xED87b75Dd703434519346f7bbb33DF70D3CFd6D6
+    logging:
+      driver: json-file
+      options:
+        max-size: 2m
+        max-file: 10
+
 
 # Blockscout postgres database
   db:
@@ -92,10 +67,11 @@ services:
         POSTGRES_HOST_AUTH_METHOD: 'trust'
     # Uncomment the following line to persist the database 
     # Dont forget the volume in the bottom of the file as well
-    # volumes:
-    #   - postgres-data:/var/lib/postgresql/data
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
     ports:
       - 7432:5432
+    user: root
 
 # # Redis db
   redis_db:
@@ -122,20 +98,21 @@ services:
     # env_file:
     #   -  ./envs/common-blockscout.env
     environment:
-        ETHEREUM_JSONRPC_VARIANT: 'besu'
-        ETHEREUM_JSONRPC_HTTP_URL: http://mineonlium:8545
+        ETHEREUM_JSONRPC_VARIANT: 'geth'
+        ETHEREUM_JSONRPC_HTTP_URL: http://moth:8545
         BLOCKSCOUT_HOST: 0.0.0.0
         PORT: 4000
-        ETHEREUM_JSONRPC_WS_URL: ws://34.87.231.138:8546/
+        ETHEREUM_JSONRPC_WS_URL: ws://moth:8546/
         INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
         FETCH_REWARDS_WAY: trace_block
         DATABASE_URL: postgresql://postgres:@db:5432/blockscout?ssl=false
         ECTO_USE_SSL: 'false'
-        ETHEREUM_JSONRPC_TRACE_URL: http://mineonlium:8545/
+        ETHEREUM_JSONRPC_TRACE_URL: http://moth:8545/
         INDEXER_CATCHUP_BLOCKS_BATCH_SIZE: 250
         # SECRET_KEY_BASE: '56NtB48ear7+wMSf0IQuWDAAazhpb31qyc7GiyspBP2vh7t5zlCsF5QDv76chXeN'
         CHAIN_ID: '54321'
         NETWORK: MineOnlium
+        COIN_NAME: MO
     ports:
       - 4000:4000
 
@@ -149,20 +126,18 @@ services:
     ports:
       - 8043:8043
 
-  nginx:
-    image: 'jc21/nginx-proxy-manager:latest'
-    restart: unless-stopped
-    ports:
-      - '80:80'
-      - '81:81'
-      - '443:443'
-    volumes:
-      - nginx-data:/data
-      - ./letsencrypt:/etc/letsencrypt
+  # nginx:
+  #   image: 'jc21/nginx-proxy-manager:latest'
+  #   restart: unless-stopped
+  #   ports:
+  #     - '80:80'
+  #     - '81:81'
+  #     - '443:443'
+  #   volumes:
+  #     - nginx-data:/data
+  #     - ./letsencrypt:/etc/letsencrypt
 
 
 volumes:
    redis-data:
-   nginx-data:
-  # uncomment the following line to persist the database
-  #  postgres-data:
+  #  nginx-data:
