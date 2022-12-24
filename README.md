@@ -11,7 +11,7 @@ Deploy the MineOnlium stack in two commands :)
 # Services Rendered:
 * BlockExplorer: http://localhost:4000
 * BlockExplorer API: http://localhost:8081
-* Moth node: 
+* Moth node: 8545(RPC) / 8456(WS) / 30303(P2P)
 
 
 # Note to Windows users
