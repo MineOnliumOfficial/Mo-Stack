@@ -108,7 +108,7 @@ services:
 
 # # Blockscout blockscanner
   blockscout:
-    image: tmjeff/moscout
+    image: blockscout/blockscout
     restart: always
     depends_on:
       db:
@@ -122,7 +122,7 @@ services:
     # env_file:
     #   -  ./envs/common-blockscout.env
     environment:
-        ETHEREUM_JSONRPC_VARIANT: 'besu'
+        ETHEREUM_JSONRPC_VARIANT: besu
         ETHEREUM_JSONRPC_HTTP_URL: http://mineonlium:8545
         BLOCKSCOUT_HOST: 0.0.0.0
         PORT: 4000
@@ -135,7 +135,13 @@ services:
         INDEXER_CATCHUP_BLOCKS_BATCH_SIZE: 250
         # SECRET_KEY_BASE: '56NtB48ear7+wMSf0IQuWDAAazhpb31qyc7GiyspBP2vh7t5zlCsF5QDv76chXeN'
         CHAIN_ID: '54321'
+        CHAIN_ID: 54321
         NETWORK: MineOnlium
+        COIN_NAME: MO
+        COIN: MO
+        JSON_RPC: http://34.87.231.138:8545
+        DISABLE_TOKEN_INSTANCE_FETCHER: false
+        DISABLE_EXCHANGE_RATES: true
     ports:
       - 4000:4000
 
